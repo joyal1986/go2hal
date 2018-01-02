@@ -2,6 +2,7 @@ package database
 
 import (
 	"gopkg.in/mgo.v2/bson"
+	"github.com/CardFrontendDevopsTeam/GoMongo"
 )
 
 /*
@@ -18,7 +19,7 @@ SetState sets the users current state
  */
 func SetState(user int, state string, field []string) error{
 	s := State{Userid:user,State:state,Field:field}
-	c := database.C("userstate")
+	c := database.Mongo.C("userstate")
 	c.RemoveAll(bson.M{"userid":user})
 	return c.Insert(&s)
 }
@@ -27,7 +28,7 @@ func SetState(user int, state string, field []string) error{
 GetState returns the users current state
  */
 func GetState(user int) State{
-	c := database.C("userstate")
+	c := database.Mongo.C("userstate")
 	var s State
 	c.Find(bson.M{"userid":user}).One(&s)
 	return s

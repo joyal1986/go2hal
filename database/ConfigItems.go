@@ -2,6 +2,7 @@ package database
 
 import (
 	"gopkg.in/mgo.v2/bson"
+	"github.com/CardFrontendDevopsTeam/GoMongo"
 )
 
 type config struct {
@@ -73,7 +74,7 @@ func GetJiraDetails() (*Jira, error) {
 }
 
 func getConfig() (*config, error) {
-	c := database.C("Config")
+	c := database.Mongo.C("Config")
 	q := c.Find(nil)
 	count, err := q.Count()
 	if err != nil {
@@ -92,7 +93,7 @@ func getConfig() (*config, error) {
 }
 
 func saveConfig(config *config) error {
-	c := database.C("Config")
+	c := database.Mongo.C("Config")
 	if config.ID == "" {
 		return c.Insert(config)
 	}

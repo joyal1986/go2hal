@@ -3,6 +3,7 @@ package database
 import (
 	"gopkg.in/mgo.v2/bson"
 	"log"
+	"github.com/CardFrontendDevopsTeam/GoMongo"
 )
 
 /*
@@ -18,7 +19,7 @@ type Recipe struct {
 AddRecipe will add a recipe to the watch list for the bot
  */
 func AddRecipe(recipeName, friendlyName string) error {
-	c := database.C("recipes")
+	c := database.Mongo.C("recipes")
 	recipeItem := Recipe{Recipe: recipeName, FriendlyName:friendlyName}
 	return c.Insert(recipeItem)
 
@@ -28,7 +29,7 @@ func AddRecipe(recipeName, friendlyName string) error {
 GetRecipes returns all the configured chef recipes. 0 length if none exists or there is an error.
  */
 func GetRecipes() ([]Recipe , error) {
-	c := database.C("recipes")
+	c := database.Mongo.C("recipes")
 	q := c.Find(nil)
 	var recipes []Recipe
 	err := q.All(&recipes)
@@ -43,7 +44,7 @@ func GetRecipes() ([]Recipe , error) {
 GetRecipeFromFriendlyName returns the chef recipe name based on the user friendly name supplied
  */
 func GetRecipeFromFriendlyName(recipe string) (string, error){
-	c := database.C("recipes")
+	c := database.Mongo.C("recipes")
 	var r Recipe
 	err := c.Find(bson.M{"friendlyname":recipe}).One(&r)
 	return r.Recipe, err

@@ -3,6 +3,7 @@ package database
 import (
 	"gopkg.in/mgo.v2/bson"
 	"time"
+	"github.com/CardFrontendDevopsTeam/GoMongo"
 )
 
 /*
@@ -140,7 +141,7 @@ GetAllSeleniumTests returns all selenium tests
  */
 func GetAllSeleniumTests() ([]Selenium, error) {
 	var result []Selenium
-	err := database.C("Selenium").Find(nil).All(&result)
+	err := database.Mongo.C("Selenium").Find(nil).All(&result)
 	return result, err
 }
 
@@ -148,7 +149,7 @@ func GetAllSeleniumTests() ([]Selenium, error) {
 AddSelenium adds a test to the database
  */
 func AddSelenium(selenium Selenium) error {
-	return database.C("Selenium").Insert(selenium)
+	return database.Mongo.C("Selenium").Insert(selenium)
 }
 
 /*
@@ -158,7 +159,7 @@ func SetSeleniumFailing(selenium *Selenium, err error) error{
 	selenium.Passing = false
 	selenium.ErrorCount++
 	selenium.LastChecked = time.Now()
-	return database.C("Selenium").UpdateId(selenium.ID,selenium)
+	return database.Mongo.C("Selenium").UpdateId(selenium.ID,selenium)
 }
 
 /*
@@ -169,6 +170,6 @@ func SetSeleniumPassing(selenium *Selenium) error {
 	selenium.ErrorCount = 0
 	selenium.LastChecked = time.Now()
 	selenium.LastSuccess = time.Now()
-	return database.C("Selenium").UpdateId(selenium.ID,selenium)
+	return database.Mongo.C("Selenium").UpdateId(selenium.ID,selenium)
 
 }

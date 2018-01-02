@@ -1,6 +1,9 @@
 package database
 
-import "gopkg.in/mgo.v2/bson"
+import (
+	"gopkg.in/mgo.v2/bson"
+	"github.com/CardFrontendDevopsTeam/GoMongo"
+)
 
 /*
 ChefEnvironment contains the chef environments this bot is allowed to use in CHEF
@@ -15,7 +18,7 @@ type ChefEnvironment struct {
 AddChefEnvironment Adds a chef environment to alert on
  */
 func AddChefEnvironment(environment, friendlyName string) {
-	c := database.C("chefenvironments")
+	c := database.Mongo.C("chefenvironments")
 	chefEnvironment := ChefEnvironment{Environment: environment, FriendlyName: friendlyName}
 	c.Insert(chefEnvironment)
 }
@@ -24,7 +27,7 @@ func AddChefEnvironment(environment, friendlyName string) {
 GetChefEnvironments will return all the chef environments in the database
  */
 func GetChefEnvironments() ([]ChefEnvironment, error) {
-	c := database.C("chefenvironments")
+	c := database.Mongo.C("chefenvironments")
 	var r []ChefEnvironment
 	err := c.Find(nil).All(&r)
 	return r, err
@@ -34,7 +37,7 @@ func GetChefEnvironments() ([]ChefEnvironment, error) {
 GetEnvironmentFromFriendlyName returns the chef environment name based on the user friendly name supplied
  */
 func GetEnvironmentFromFriendlyName(recipe string) (string, error) {
-	c := database.C("chefenvironments")
+	c := database.Mongo.C("chefenvironments")
 	var r ChefEnvironment
 	err := c.Find(bson.M{"friendlyname": recipe}).One(&r)
 	return r.Environment, err

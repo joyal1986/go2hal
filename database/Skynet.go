@@ -4,6 +4,7 @@ import (
 	"gopkg.in/mgo.v2/bson"
 	"log"
 	"errors"
+	"github.com/CardFrontendDevopsTeam/GoMongo"
 )
 
 /*
@@ -20,7 +21,7 @@ type Skynet struct {
 AddSkynetEndpoint will add a skynet endpoint, or update if it already exists
  */
 func AddSkynetEndpoint(url, username, password string) error {
-	c := database.C("skynet")
+	c := database.Mongo.C("skynet")
 	q := c.Find(nil)
 	var s Skynet
 	count, err := c.Count()
@@ -51,7 +52,7 @@ func AddSkynetEndpoint(url, username, password string) error {
 GetSkynetRecord will return the skynet record in the mongo DB, else throw an error if one doesnt exist.
  */
 func GetSkynetRecord() (Skynet, error) {
-	c := database.C("skynet")
+	c := database.Mongo.C("skynet")
 	var s Skynet
 	count, err := c.Count()
 	if err != nil {

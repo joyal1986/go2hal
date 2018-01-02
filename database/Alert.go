@@ -4,6 +4,7 @@ import (
 	"gopkg.in/mgo.v2/bson"
 	"fmt"
 	"log"
+	"github.com/CardFrontendDevopsTeam/GoMongo"
 )
 
 /*
@@ -20,7 +21,7 @@ type AlertDB struct {
 AlertGroup returns the alert group
  */
 func AlertGroup() (groupID int64, err error) {
-	c := database.C("Alert")
+	c := database.Mongo.C("Alert")
 	count, _ := c.Count()
 	if count == 0 {
 		return 0, fmt.Errorf("no alert group has been set")
@@ -34,7 +35,7 @@ func AlertGroup() (groupID int64, err error) {
 HeartbeatGroup Returns the heartbeat group.
  */
 func HeartbeatGroup() (groupID int64, err error) {
-	c := database.C("Alert")
+	c := database.Mongo.C("Alert")
 	count, _ := c.Count()
 	if count == 0 {
 		return 0, fmt.Errorf("no heartbeat group has been set")
@@ -48,7 +49,7 @@ func HeartbeatGroup() (groupID int64, err error) {
 NonTechnicalGroup Returns the heartbeat group.
  */
 func NonTechnicalGroup() (groupID int64, err error) {
-	c := database.C("Alert")
+	c := database.Mongo.C("Alert")
 	count, _ := c.Count()
 	if count == 0 {
 		return 0, fmt.Errorf("no non technical group has been set")
@@ -62,7 +63,7 @@ func NonTechnicalGroup() (groupID int64, err error) {
 SetAlertGroup Sets the alert group. Overrides existing group if one already exists.
  */
 func SetAlertGroup(AlertGroupID int64) {
-	c := database.C("Alert")
+	c := database.Mongo.C("Alert")
 	count, _ := c.Count()
 
 	if count == 0 {
@@ -87,7 +88,7 @@ func SetAlertGroup(AlertGroupID int64) {
 SetHeartbeatGroup Sets the alert group. Overrides existing group if one already exists.
  */
 func SetHeartbeatGroup(groupID int64) {
-	c := database.C("Alert")
+	c := database.Mongo.C("Alert")
 	count, _ := c.Count()
 
 	if count == 0 {
@@ -112,7 +113,7 @@ func SetHeartbeatGroup(groupID int64) {
 SetNonTechnicalGroup Sets the alert group. Overrides existing group if one already exists.
  */
 func SetNonTechnicalGroup(groupID int64) {
-	c := database.C("Alert")
+	c := database.Mongo.C("Alert")
 	count, _ := c.Count()
 
 	if count == 0 {

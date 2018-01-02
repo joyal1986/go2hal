@@ -3,6 +3,7 @@ package database
 import (
 	"gopkg.in/mgo.v2/bson"
 	"errors"
+	"github.com/CardFrontendDevopsTeam/GoMongo"
 )
 
 type AppDynamics struct {
@@ -28,7 +29,7 @@ update it.
 func AddAppDynamicsEndpoint(endpoint string) error{
 	a := AppDynamics{Endpoint: endpoint}
 	b, err := GetAppDynamics()
-	c := database.C("appDynamics")
+	c := database.Mongo.C("appDynamics")
 
 	if err == nil {
 		a.ID = b.ID
@@ -55,7 +56,7 @@ func AddMqEndpoint(name, application string, metricPath string) error {
 	}
 
 	appd.MqEndpoints = append(appd.MqEndpoints, mq)
-	c := database.C("appDynamics")
+	c := database.Mongo.C("appDynamics")
 	err = c.UpdateId(appd.ID, appd)
 	if err != nil {
 		return err
@@ -68,7 +69,7 @@ func AddMqEndpoint(name, application string, metricPath string) error {
 GetAppDynamics wll return the app dynamics object in the ob, Else, error if nothing exists.
  */
 func GetAppDynamics() (*AppDynamics, error) {
-	c := database.C("appDynamics")
+	c := database.Mongo.C("appDynamics")
 	i, err := c.Count()
 	if err != nil {
 		return nil, err

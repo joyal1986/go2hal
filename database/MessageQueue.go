@@ -1,6 +1,9 @@
 package database
 
-import "gopkg.in/mgo.v2/bson"
+import (
+	"gopkg.in/mgo.v2/bson"
+	"github.com/CardFrontendDevopsTeam/GoMongo"
+)
 
 type messageDB struct {
 	ID        bson.ObjectId `bson:"_id,omitempty"`
@@ -20,13 +23,13 @@ type MessageDTO struct {
 //AddMessageToQueue saves a message to be delivered later
 func AddMessageToQueue(message string, chatID int64, messageID int) {
 	msg := messageDB{MessageString: message, MessageID: messageID, ChatID: chatID}
-	c := database.C("MessageQueue")
+	c := database.Mongo.C("MessageQueue")
 	c.Insert(msg)
 }
 
 //GetMessages returns all messages to be delivered. Deleted them from the queue.
 func GetMessages() []MessageDTO {
-	c := database.C("MessageQueue")
+	c := database.Mongo.C("MessageQueue")
 	var messages []messageDB
 	c.Find(nil).All(&messages)
 
@@ -46,7 +49,7 @@ func GetMessages() []MessageDTO {
 QueueDepth returns the current depth of pending messages
  */
 func QueueDepth() int {
-	c := database.C("MessageQueue")
+	c := database.Mongo.C("MessageQueue")
 	i,_ := c.Find(nil).Count()
 	return i
 }

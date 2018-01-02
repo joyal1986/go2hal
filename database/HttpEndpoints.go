@@ -5,6 +5,7 @@ import (
 	"time"
 	"log"
 	"fmt"
+	"github.com/CardFrontendDevopsTeam/GoMongo"
 )
 
 type HTTPEndpoint struct {
@@ -28,13 +29,13 @@ type Parameters struct {
 
 //AddHTMLEndpoint allows for a new endpoint to be added
 func AddHTMLEndpoint(endpoint HTTPEndpoint) {
-	c := database.C("MonitorHtmlEndpoints")
+	c := database.Mongo.C("MonitorHtmlEndpoints")
 	c.Insert(endpoint)
 }
 
 //GetHTMLEndpoints returns a list of HTML Endpoints
 func GetHTMLEndpoints() []HTTPEndpoint {
-	c := database.C("MonitorHtmlEndpoints")
+	c := database.Mongo.C("MonitorHtmlEndpoints")
 	q := c.Find(nil)
 	i, err := q.Count()
 	if err != nil {
@@ -54,7 +55,7 @@ func GetHTMLEndpoints() []HTTPEndpoint {
 SuccessfulEndpointTest will update the mongo element with the ID with the latest details to show it passed successfully
  */
 func SuccessfulEndpointTest(endpoint *HTTPEndpoint) error {
-	c := database.C("MonitorHtmlEndpoints")
+	c := database.Mongo.C("MonitorHtmlEndpoints")
 
 	endpoint.LastChecked = time.Now()
 	endpoint.LastSuccess = time.Now()
@@ -73,7 +74,7 @@ func SuccessfulEndpointTest(endpoint *HTTPEndpoint) error {
 FailedEndpointTest will update the mongo element with the failed details
  */
 func FailedEndpointTest(endpoint *HTTPEndpoint, errorMessage string) error {
-	c := database.C("MonitorHtmlEndpoints")
+	c := database.Mongo.C("MonitorHtmlEndpoints")
 	result := HTTPEndpoint{}
 	err := c.FindId(endpoint.ID).One(&result);
 	if err != nil {

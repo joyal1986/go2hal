@@ -1,6 +1,9 @@
 package database
 
-import "gopkg.in/mgo.v2/bson"
+import (
+	"gopkg.in/mgo.v2/bson"
+	"github.com/CardFrontendDevopsTeam/GoMongo"
+)
 
 type auditEntry struct {
 	ID bson.ObjectId `bson:"_id,omitempty"`
@@ -11,6 +14,6 @@ type auditEntry struct {
 //SaveAudit adds a audit record to the mongo DB
 func SaveAudit(dataType,payload string){
 	r := auditEntry{Datatype:dataType,Payload:payload}
-	c := database.C("audit")
+	c := database.Mongo.C("audit")
 	c.Insert(r)
 }

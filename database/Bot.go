@@ -4,6 +4,7 @@ import (
 	"gopkg.in/mgo.v2/bson"
 	"time"
 	"log"
+	database "github.com/CardFrontendDevopsTeam/GoMongo"
 )
 
 type bot struct {
@@ -26,7 +27,7 @@ type HeartBeat struct {
 AddBot will add a bot to the database
  */
 func AddBot(botKey string) error{
-	c := database.C("bots")
+	c := database.Mongo.C("bots")
 	botItem := bot{}
 	botItem.Token = botKey
 	err := c.Insert(botItem)
@@ -72,7 +73,7 @@ func GetBotHeartbeat() []HeartBeat {
 }
 
 func findBot(botToken string) bot {
-	c := database.C("bots")
+	c := database.Mongo.C("bots")
 	result := bot{}
 	err := c.Find(bson.M{"token":botToken}).One(&result)
 	if err != nil {
@@ -82,7 +83,7 @@ func findBot(botToken string) bot {
 }
 
 func updateBot(botItem bot){
-	c := database.C("bots")
+	c := database.Mongo.C("bots")
 	err := c.UpdateId(botItem.ID,botItem)
 	if err != nil {
 		log.Println(err)
@@ -91,7 +92,7 @@ func updateBot(botItem bot){
 }
 
 func getBots() ([]bot, error) {
-	c := database.C("bots")
+	c := database.Mongo.C("bots")
 	q := c.Find(nil)
 	var bots []bot
 	err := q.All(&bots)

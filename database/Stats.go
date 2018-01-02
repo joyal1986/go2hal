@@ -1,6 +1,9 @@
 package database
 
-import "gopkg.in/mgo.v2/bson"
+import (
+	"gopkg.in/mgo.v2/bson"
+	"github.com/CardFrontendDevopsTeam/GoMongo"
+)
 
 type stats struct {
 	ID                       bson.ObjectId `bson:"_id,omitempty"`
@@ -63,7 +66,7 @@ func GetStats() (send, alerts, appdynamics, chefDelivery int64) {
 }
 
 func getRecord() stats {
-	c := database.C("stats")
+	c := database.Mongo.C("stats")
 	var stat stats
 	q := c.Find(nil)
 	count, _ := q.Count()
@@ -77,6 +80,6 @@ func getRecord() stats {
 }
 
 func saveRecord(stat stats) {
-	c := database.C("stats")
+	c := database.Mongo.C("stats")
 	c.UpdateId(stat.ID, stat)
 }

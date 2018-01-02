@@ -4,6 +4,7 @@ import (
 	"gopkg.in/mgo.v2/bson"
 	"strings"
 	"errors"
+	"github.com/CardFrontendDevopsTeam/GoMongo"
 )
 
 type command struct {
@@ -23,7 +24,7 @@ type Key struct {
 AddCommand adds a predefined command to a db
  */
 func AddCommand(name, commandString string) error {
-	c := database.C("commands")
+	c := database.Mongo.C("commands")
 	name = strings.ToUpper(name)
 	com := command{Name: name, Command: commandString}
 	return c.Insert(com)
@@ -33,7 +34,7 @@ func AddCommand(name, commandString string) error {
 FindCommand returns a command
  */
 func FindCommand(name string) (string, error) {
-	c := database.C("commands")
+	c := database.Mongo.C("commands")
 	result := command{}
 	err := c.Find(bson.M{"name": strings.ToUpper(name)}).One(&result)
 	if err != nil {
@@ -46,7 +47,7 @@ func FindCommand(name string) (string, error) {
 AddKey adds a key to the DB if it doesnt exist. Else updates.
  */
 func AddKey(username, key string) error {
-	c := database.C("keys")
+	c := database.Mongo.C("keys")
 	q := c.Find(nil)
 	count, err := q.Count()
 	if err != nil {
@@ -71,7 +72,7 @@ func AddKey(username, key string) error {
 GetKey returns a ssh key
  */
 func GetKey() (*Key, error) {
-	c := database.C("keys")
+	c := database.Mongo.C("keys")
 	q := c.Find(nil)
 	count, err := q.Count()
 	if err != nil {

@@ -2,6 +2,7 @@ package database
 
 import (
 	"gopkg.in/mgo.v2/bson"
+	"github.com/CardFrontendDevopsTeam/GoMongo"
 )
 
 /*
@@ -14,7 +15,7 @@ type ChefClient struct {
 
 //AddChefClient Adds a Chef Client to the database.
 func AddChefClient(name,url,key string){
-	c := database.C("chef")
+	c := database.Mongo.C("chef")
 	chef := ChefClient{Key:key,Name:name,URL:url}
 	c.Insert(chef)
 }
@@ -23,7 +24,7 @@ func AddChefClient(name,url,key string){
 GetChefClientDetails returns the chef client details
  */
 func GetChefClientDetails() (ChefClient,error){
-	c := database.C("chef")
+	c := database.Mongo.C("chef")
 	var client ChefClient
 	err := c.Find(nil).One(&client)
 	return client,err
@@ -33,7 +34,7 @@ func GetChefClientDetails() (ChefClient,error){
 IsChefConfigured will return true if a chef client is configured.
  */
 func IsChefConfigured() (bool, error) {
-	c := database.C("chef")
+	c := database.Mongo.C("chef")
 	count, err := c.Find(nil).Count()
 	if err != nil {
 		return false, err
