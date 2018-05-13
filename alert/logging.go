@@ -87,36 +87,14 @@ func (s *loggingService) SendError(ctx context.Context, err error) (e error) {
 	return s.Service.SendError(ctx, err)
 
 }
-func (s *loggingService) SendAlertKeyboardRecipe(ctx context.Context, nodes []string) (err error) {
+func (s *loggingService) AlertGroup(ctx context.Context) (groupid int64, err error) {
 	defer func(begin time.Time) {
 		s.logger.Log(
-			"method", "send keyboard recipe",
+			"method", "alert group",
 			"took", time.Since(begin),
 			"err", err,
 		)
 	}(time.Now())
-	return s.Service.SendAlertKeyboardRecipe(ctx, nodes)
-
-}
-func (s *loggingService) SendAlertEnvironment(ctx context.Context, nodes []string) (err error) {
-	defer func(begin time.Time) {
-		s.logger.Log(
-			"method", "send keyboard environment",
-			"took", time.Since(begin),
-			"err", err,
-		)
-	}(time.Now())
-	return s.Service.SendAlertEnvironment(ctx, nodes)
-
-}
-func (s *loggingService) SendAlertNodes(ctx context.Context, nodes []string) (err error) {
-	defer func(begin time.Time) {
-		s.logger.Log(
-			"method", "send keyboard nodes",
-			"took", time.Since(begin),
-			"err", err,
-		)
-	}(time.Now())
-	return s.Service.SendAlertNodes(ctx, nodes)
+	return s.Service.AlertGroup(ctx)
 
 }

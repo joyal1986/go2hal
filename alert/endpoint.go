@@ -5,9 +5,12 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	"github.com/pkg/errors"
 )
-//request for keyboard alerts.
-type KeyboardAlertRequest struct {
-	Nodes   []string `json:"Nodes"`
+
+
+
+//alert group rest service response
+type AlertGroupResponse struct {
+	Groupid int64 `json:"groupid"`
 }
 
 func makeAlertEndpoint(s Service) endpoint.Endpoint {
@@ -54,21 +57,12 @@ func makeAlertErrorHandler(s Service) endpoint.Endpoint {
 
 }
 
-func makeKeyboardRecipeAlertEndpoint(s Service) endpoint.Endpoint {
+func makeAlertGroupHandler(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(KeyboardAlertRequest)
-		return nil, s.SendAlertKeyboardRecipe(ctx,req.Nodes)
-	}
-}
-func makeEnvironmentAlertEndpoint(s Service) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(KeyboardAlertRequest)
-		return nil, s.SendAlertEnvironment(ctx, req.Nodes)
-	}
-}
-func makeNodesAlertEndpoint(s Service) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(KeyboardAlertRequest)
-		return nil, s.SendAlertNodes(ctx, req.Nodes)
+		groupid, err := s.AlertGroup(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return AlertGroupResponse{Groupid: groupid}, nil
 	}
 }

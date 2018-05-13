@@ -11,35 +11,39 @@ import (
 	"gopkg.in/kyokomi/emoji.v1"
 	"strings"
 	"time"
+	"github.com/weAutomateEverything/go2hal/telegram"
 )
 
 type Service interface {
-	sendDeliveryAlert(ctx context.Context, message string)
-	FindNodesFromFriendlyNames(recipe, environment string) []Node
+	sendDeliveryAlert(ctx context.Context, message string) error
+	FindNodesFromFriendlyNames(recipe, environment string) ([]Node, error)
+	SendKeyboardRecipe(ctx context.Context, message string) error
+	SendKeyboardEnvironment(ctx context.Context, message string) error
+	SendKeyboardNodes(ctx context.Context, recipe, environment, message string) error
 }
 
 type service struct {
-	alert alert.Service
-
+	alert     alert.Service
 	chefStore Store
+	telegram  telegram.Service
 }
 
-func NewService(alert alert.Service, chefStore Store) Service {
-	s := &service{alert, chefStore}
+func NewService(alert alert.Service, chefStore Store, telegram telegram.Service) Service {
+	s := &service{alert, chefStore, telegram}
 	go func() {
 		s.monitorQuarentined()
 	}()
 	return s
 }
 
-func (s *service) sendDeliveryAlert(ctx context.Context, message string) {
+func (s *service) sendDeliveryAlert(ctx context.Context, message string) error {
 	var dat map[string]interface{}
 
 	message = strings.Replace(message, "\n", "\\n", -1)
 
 	if err := json2.Unmarshal([]byte(message), &dat); err != nil {
 		s.alert.SendError(ctx, fmt.Errorf("delivery - error unmarshalling: %s", message))
-		return
+		return err
 	}
 
 	attachments := dat["attachments"].([]interface{})
@@ -74,7 +78,7 @@ func (s *service) sendDeliveryAlert(ctx context.Context, message string) {
 	buffer.WriteString(")")
 
 	s.alert.SendAlert(ctx, buffer.String())
-
+	return nil
 }
 
 func buildDeliveryEnent(buffer *bytes.Buffer, body string) {
@@ -126,7 +130,7 @@ func (s *service) checkQuarentined() {
 
 	for _, r := range recipes {
 		for _, e := range env {
-			nodes := s.FindNodesFromFriendlyNames(r.FriendlyName, e.FriendlyName)
+			nodes, _ := s.FindNodesFromFriendlyNames(r.FriendlyName, e.FriendlyName)
 			for _, n := range nodes {
 				if strings.Index(n.Environment, "quar") > 0 {
 					s.alert.SendAlert(context.TODO(), emoji.Sprintf(":hospital: *Node Quarantined* \n node %v has been placed in environment %v. Application %v ", n.Name, strings.Replace(n.Environment, "_", " ", -1), r.FriendlyName))
@@ -137,29 +141,29 @@ func (s *service) checkQuarentined() {
 
 }
 
-func (s *service) FindNodesFromFriendlyNames(recipe, environment string) []Node {
+func (s *service) FindNodesFromFriendlyNames(recipe, environment string) ([]Node, error) {
 	chefRecipe, err := s.chefStore.GetRecipeFromFriendlyName(recipe)
 	if err != nil {
 		s.alert.SendError(context.TODO(), err)
-		return nil
+		return nil, err
 	}
 
 	chefEnv, err := s.chefStore.GetEnvironmentFromFriendlyName(environment)
 	if err != nil {
 		s.alert.SendError(context.TODO(), err)
-		return nil
+		return nil, err
 	}
 
 	client, err := s.getChefClient()
 	if err != nil {
 		s.alert.SendError(context.TODO(), err)
-		return nil
+		return nil, err
 	}
 
 	query, err := client.Search.NewQuery("node", fmt.Sprintf("recipe:%s AND chef_environment:%s", chefRecipe, chefEnv))
 	if err != nil {
 		s.alert.SendError(context.TODO(), err)
-		return nil
+		return nil, err
 	}
 
 	part := make(map[string]interface{})
@@ -169,7 +173,7 @@ func (s *service) FindNodesFromFriendlyNames(recipe, environment string) []Node 
 	res, err := query.DoPartial(client, part)
 	if err != nil {
 		s.alert.SendError(context.TODO(), err)
-		return nil
+		return nil, err
 	}
 
 	result := make([]Node, res.Total)
@@ -182,7 +186,7 @@ func (s *service) FindNodesFromFriendlyNames(recipe, environment string) []Node 
 		result[i] = Node{Name: name, Environment: env}
 	}
 
-	return result
+	return result, nil
 
 }
 
@@ -208,4 +212,49 @@ func connect(name, key, url string) (client *chef.Client, err error) {
 type Node struct {
 	Name        string
 	Environment string
+}
+
+func (s *service) SendKeyboardRecipe(ctx context.Context, message string) error {
+	recipes, err := s.chefStore.GetRecipes()
+	if err != nil {
+		s.alert.SendError(context.TODO(), err)
+		return err
+	}
+	l := make([]string, len(recipes))
+	for x, i := range recipes {
+		l[x] = i.FriendlyName
+	}
+	alertGroup, err := s.alert.AlertGroup(ctx)
+	s.telegram.SendKeyboard(ctx, l, message, alertGroup)
+	return err;
+}
+func (s *service) SendKeyboardEnvironment(ctx context.Context, message string) error {
+	environments, err := s.chefStore.GetChefEnvironments()
+	if err != nil {
+		s.alert.SendError(context.TODO(), err)
+		return err
+	}
+
+	l := make([]string, len(environments))
+	for x, i := range environments {
+		l[x] = i.FriendlyName
+	}
+	alertGroup, err := s.alert.AlertGroup(ctx)
+	s.telegram.SendKeyboard(ctx, l, message, alertGroup)
+	return err;
+}
+func (s *service) SendKeyboardNodes(ctx context.Context, recipe, environment, message string) error {
+	nodes, err := s.FindNodesFromFriendlyNames(recipe, environment)
+	if err != nil {
+		s.alert.SendError(context.TODO(), err)
+		return err
+	}
+
+	l := make([]string, len(nodes))
+	for x, i := range nodes {
+		l[x] = i.Name
+	}
+	alertGroup, err := s.alert.AlertGroup(ctx)
+	s.telegram.SendKeyboard(ctx, l, message, alertGroup)
+	return err;
 }

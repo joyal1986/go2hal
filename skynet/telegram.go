@@ -126,7 +126,7 @@ func (s *rebuildChefNodeEnvironmentReply) CanExecute(update tgbotapi.Update, sta
 }
 
 func (s *rebuildChefNodeEnvironmentReply) Execute(update tgbotapi.Update, state telegram.State) {
-	nodes := s.chefService.FindNodesFromFriendlyNames(state.Field[0], update.Message.Text)
+	nodes, _ := s.chefService.FindNodesFromFriendlyNames(state.Field[0], update.Message.Text)
 	res := make([]string, len(nodes))
 	for i, x := range nodes {
 		res[i] = x.Name

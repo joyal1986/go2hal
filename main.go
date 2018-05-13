@@ -246,7 +246,7 @@ func main() {
 			Help:      "Total duration of requests in microseconds.",
 		}, fieldKeys), calloutService)
 
-	chefService := chef.NewService(alertService, chefStore)
+	chefService := chef.NewService(alertService, chefStore, telegramService)
 	chefService = chef.NewLoggingService(log.With(logger, "component", "chef"), chefService)
 	chefService = chef.NewInstrumentService(kitprometheus.NewCounterFrom(stdprometheus.CounterOpts{
 		Namespace: "api",
@@ -254,6 +254,12 @@ func main() {
 		Name:      "request_count",
 		Help:      "Number of requests received.",
 	}, fieldKeys),
+		kitprometheus.NewCounterFrom(stdprometheus.CounterOpts{
+			Namespace: "api",
+			Subsystem: "chef",
+			Name:      "error_count",
+			Help:      "Number of errors encountered.",
+		}, fieldKeys),
 		kitprometheus.NewSummaryFrom(stdprometheus.SummaryOpts{
 			Namespace: "api",
 			Subsystem: "chef",
@@ -348,7 +354,7 @@ func main() {
 	mux.Handle("/users/", user.MakeHandler(userService, httpLogger, machineLearningService))
 	mux.Handle("/aws/sendTestAlert", halaws.MakeHandler(aws, httpLogger, machineLearningService))
 	mux.Handle("/callout/", callout.MakeHandler(calloutService, httpLogger, machineLearningService))
-
+	mux.Handle("/chef/", chef.MakeHandler(chefService, httpLogger, machineLearningService))
 	http.Handle("/", panicHandler{accessControl(mux), jiraService, alertService})
 	http.Handle("/metrics", promhttp.Handler())
 

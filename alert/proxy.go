@@ -26,9 +26,7 @@ type alertKubernetesProxy struct {
 	sendImageToAlertGroupEndpoint     endpoint.Endpoint
 	sendImageToHeartbeatGroupEndpoint endpoint.Endpoint
 	sendErrorEndpoint                 endpoint.Endpoint
-	sendKeyboardRecipeAlertEndpoint   endpoint.Endpoint
-	sendEnvironmentAlertEndpoint      endpoint.Endpoint
-	sendNodesAlertEndpoint            endpoint.Endpoint
+	alertGroupEndpoint                endpoint.Endpoint
 }
 
 /*
@@ -87,18 +85,6 @@ func newProxy(namespace string, logger log.Logger) Service {
 	alert = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(alert)
 	alert = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second), 10))(alert)
 
-	alertKeyboardRecipe := makeKeyboardRecipeAlertHTTPProxy(namespace, logger)
-	alertKeyboardRecipe = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(alertKeyboardRecipe)
-	alertKeyboardRecipe = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second), 10))(alertKeyboardRecipe)
-
-	alertEnvironment := makeEnvironmentAlertHTTPProxy(namespace, logger)
-	alertEnvironment = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(alertEnvironment)
-	alertEnvironment = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second), 10))(alertEnvironment)
-
-	alertNodes := makeNodesAlertHTTPProxy(namespace, logger)
-	alertNodes = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(alertNodes)
-	alertNodes = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second), 10))(alertNodes)
-
 	alertImage := makeAlertSendImageToAlertGroupHTTPProxy(namespace, logger)
 	alertImage = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(alertImage)
 	alertImage = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second), 10))(alertImage)
@@ -119,25 +105,16 @@ func newProxy(namespace string, logger log.Logger) Service {
 	alertError = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(alertError)
 	alertError = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second), 10))(alertError)
 
-	return &alertKubernetesProxy{sendAlertEndpoint: alert, sendErrorEndpoint: alertError, sendKeyboardRecipeAlertEndpoint: alertKeyboardRecipe, sendEnvironmentAlertEndpoint: alertEnvironment,
-		sendNodesAlertEndpoint: alertNodes, sendHeartbeatGroupAlertEndpoint: heartbeatAlert, sendImageToAlertGroupEndpoint: alertImage,
-		sendImageToHeartbeatGroupEndpoint: heartbeatImage, sendNonTechnicalAlertEndpoint: nonTechAlert}
+	alertGroup := makeAlertGroupHTTPProxy(namespace, logger)
+	alertGroup = circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{}))(alertGroup)
+	alertGroup = ratelimit.NewErroringLimiter(rate.NewLimiter(rate.Every(time.Second), 10))(alertGroup)
+
+	return &alertKubernetesProxy{sendAlertEndpoint: alert, sendErrorEndpoint: alertError,sendHeartbeatGroupAlertEndpoint: heartbeatAlert, sendImageToAlertGroupEndpoint: alertImage,
+		sendImageToHeartbeatGroupEndpoint: heartbeatImage, sendNonTechnicalAlertEndpoint: nonTechAlert,alertGroupEndpoint: alertGroup}
 
 }
 func (s *alertKubernetesProxy) SendAlert(ctx context.Context, message string) error {
 	_, err := s.sendAlertEndpoint(getContext(ctx), message)
-	return err
-}
-func (s *alertKubernetesProxy) SendAlertKeyboardRecipe(ctx context.Context, message []string) error {
-	_, err := s.sendKeyboardRecipeAlertEndpoint(getContext(ctx), message)
-	return err
-}
-func (s *alertKubernetesProxy) SendAlertEnvironment(ctx context.Context, message []string) error {
-	_, err := s.sendEnvironmentAlertEndpoint(getContext(ctx), message)
-	return err
-}
-func (s *alertKubernetesProxy) SendAlertNodes(ctx context.Context, message []string) error {
-	_, err := s.sendNodesAlertEndpoint(getContext(ctx), message)
 	return err
 }
 func (s *alertKubernetesProxy) SendNonTechnicalAlert(ctx context.Context, message string) error {
@@ -160,7 +137,10 @@ func (s *alertKubernetesProxy) SendError(ctx context.Context, err error) error {
 	_, e := s.sendErrorEndpoint(getContext(ctx), err)
 	return e
 }
-
+func (s *alertKubernetesProxy) AlertGroup(ctx context.Context) (int64, error) {
+	_, e := s.alertGroupEndpoint(getContext(ctx), "")
+	return 0, e
+}
 func makeAlertHTTPProxy(namespace string, logger log.Logger) endpoint.Endpoint {
 
 	return http.NewClient(
@@ -182,39 +162,7 @@ func makeAlertSendNonTechnicalAlertHTTPProxy(namespace string, logger log.Logger
 		gokit.GetClientOpts(logger)...,
 	).Endpoint()
 }
-func makeKeyboardRecipeAlertHTTPProxy(namespace string, logger log.Logger) endpoint.Endpoint {
 
-	return http.NewClient(
-		"POST",
-		GetURL(namespace, "alert/keyboard/recipe"),
-		gokit.EncodeJsonRequest,
-		gokit.DecodeResponse,
-		gokit.GetClientOpts(logger)...,
-	).Endpoint()
-
-}
-func makeEnvironmentAlertHTTPProxy(namespace string, logger log.Logger) endpoint.Endpoint {
-
-	return http.NewClient(
-		"POST",
-		GetURL(namespace, "alert/keyboard/environment"),
-		gokit.EncodeJsonRequest,
-		gokit.DecodeResponse,
-		gokit.GetClientOpts(logger)...,
-	).Endpoint()
-
-}
-func makeNodesAlertHTTPProxy(namespace string, logger log.Logger) endpoint.Endpoint {
-
-	return http.NewClient(
-		"POST",
-		GetURL(namespace, "alert/keyboard/nodes"),
-		gokit.EncodeJsonRequest,
-		gokit.DecodeResponse,
-		gokit.GetClientOpts(logger)...,
-	).Endpoint()
-
-}
 func makeAlertSendHeartbeatGroupAlertHTTPProxy(namespace string, logger log.Logger) endpoint.Endpoint {
 	return http.NewClient(
 		"POST",
@@ -254,7 +202,15 @@ func makeAlertSendErrorHTTPProxy(namespace string, logger log.Logger) endpoint.E
 		gokit.GetClientOpts(logger)...,
 	).Endpoint()
 }
-
+func makeAlertGroupHTTPProxy(namespace string, logger log.Logger) endpoint.Endpoint {
+	return http.NewClient(
+		"POST",
+		GetURL(namespace, "alert/group"),
+		gokit.EncodeRequest,
+		gokit.DecodeResponse,
+		gokit.GetClientOpts(logger)...,
+	).Endpoint()
+}
 func GetURL(namespace, uri string) *url.URL {
 	u := getHalUrl()
 	if u != "" {
