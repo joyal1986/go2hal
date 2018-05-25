@@ -22,6 +22,7 @@ message Request {
     string nextstate = 2;
 }
 
+
 message Response {
     string from = 1;
     string message = 2;
