@@ -13,6 +13,7 @@ It has these top-level messages:
 	Request
 	Response
 */
+
 package remoteTelegramCommands
 
 import proto "github.com/golang/protobuf/proto"

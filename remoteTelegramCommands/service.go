@@ -11,6 +11,7 @@ type service struct {
 	telegram telegram.Service
 }
 
+
 func NewService(telegram telegram.Service) RemoteCommandServer {
 	return &service{telegram: telegram}
 }
